@@ -63,6 +63,39 @@ public class CSVUtilTest {
         assert listFilter.block().size() == 322;
     }
 
+    @Test
+    void reactive_nacionalidades() {
+        List<Player> list = CsvUtilFile.getPlayers();
+        Flux<String> listFlux = Flux.fromStream(list.parallelStream()).map(player -> {
+            return player.national;
+        }).sort().cache();
+        Mono<List<String>> nacionalidades = listFlux.collectList();
+        System.out.println(nacionalidades.block());
+        assert  nacionalidades.block().size() == 164;
 
+    }
 
+    @Test
+    void reactive_rank_per_nationality() {
+        List<Player> list = CsvUtilFile.getPlayers();
+        Flux<Player> listFlux = Flux.fromStream(list.parallelStream()).cache();
+        Flux<String> nacionalidades = Flux.fromStream(list.parallelStream()).map(player -> {
+            return player.national;
+        }).distinct().cache();
+        var filtro = nacionalidades
+                .flatMap(
+                        nacionalidad -> {
+                            return listFlux.filter(player -> player.national.equals(nacionalidad))
+                                    .sort((obj1, obj2) -> obj1.compareWinners(obj2)).take(3);
+                        }
+                );
+        Mono<List<Player>> rank = filtro.collectList();
+        System.out.println(rank.block().get(0).name);
+        System.out.println(rank.block().get(1).name);
+        System.out.println(rank.block().get(2).name);
+        System.out.println(rank.block().get(3).name);
+        System.out.println(rank.block().get(4).name);
+        System.out.println(rank.block().get(5).name);
+        System.out.println(rank.block().get(164).name);
+    }
 }
